@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FaceAttendance — Student Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #090e1a; --surface: #0f1828; --border: #1e2d45;
+    --accent: #00e5ff; --accent2: #7c3aed;
+    --green: #00ff88; --red: #ff4455; --gold: #ffd700;
+    --text: #e8f4ff; --muted: #5a7a99; --card: #111d2e;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  body::before {
+    content:''; position:fixed; inset:0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(0,229,255,0.03) 1px,transparent 1px);
+    background-size:40px 40px; pointer-events:none; z-index:0;
+  }
+
+  nav {
+    position:relative; z-index:10;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 40px; border-bottom:1px solid var(--border);
+    background:rgba(9,14,26,0.9); backdrop-filter:blur(12px);
+  }
+
+  .logo {
+    font-family:'Space Mono',monospace; font-size:1.2rem; font-weight:700;
+    color:var(--accent); letter-spacing:2px; text-decoration:none;
+    display:flex; align-items:center; gap:10px;
+  }
+
+  .logo-dot {
+    width:10px; height:10px; border-radius:50%;
+    background:var(--accent); box-shadow:0 0 12px var(--accent);
+    animation:pulse 2s infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+
+  .nav-links { display:flex; gap:8px; }
+
+  .nav-links a {
+    font-family:'Space Mono',monospace; font-size:0.75rem; color:var(--muted);
+    text-decoration:none; padding:8px 16px; border:1px solid var(--border);
+    border-radius:4px; transition:all 0.2s; letter-spacing:1px;
+  }
+
+  .nav-links a:hover, .nav-links a.active {
+    color:var(--accent); border-color:var(--accent);
+    background:rgba(0,229,255,0.05);
+  }
+
+  .hero {
+    position:relative; z-index:1;
+    padding:40px 40px 0; max-width:1200px; margin:0 auto;
+  }
+
+  .profile-hero {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:16px; overflow:hidden;
+    display:grid; grid-template-columns:auto 1fr auto;
+    align-items:center;
+  }
+
+  .hero-accent-bar {
+    width:6px; align-self:stretch;
+    background:linear-gradient(180deg,var(--accent),var(--accent2));
+  }
+
+  .hero-info {
+    padding:28px 30px;
+    display:flex; align-items:center; gap:24px;
+  }
+
+  .student-avatar {
+    width:80px; height:80px; border-radius:50%;
+    background:linear-gradient(135deg,var(--accent2),var(--accent));
+    display:flex; align-items:center; justify-content:center;
+    font-size:2rem; flex-shrink:0;
+    box-shadow:0 0 30px rgba(0,229,255,0.2);
+  }
+
+  .student-details h1 { font-size:1.5rem; font-weight:800; line-height:1.2; }
+
+  .student-details .sub {
+    font-family:'Space Mono',monospace; font-size:0.7rem;
+    color:var(--muted); letter-spacing:2px; margin-top:4px;
+  }
+
+  .student-tags { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+
+  .tag {
+    font-family:'Space Mono',monospace; font-size:0.62rem;
+    padding:4px 10px; border-radius:20px; letter-spacing:1px;
+  }
+
+  .tag-blue   { background:rgba(0,229,255,0.08); color:var(--accent); border:1px solid rgba(0,229,255,0.2); }
+  .tag-purple { background:rgba(124,58,237,0.1); color:#a78bfa;       border:1px solid rgba(124,58,237,0.3); }
+  .tag-green  { background:rgba(0,255,136,0.08); color:var(--green);  border:1px solid rgba(0,255,136,0.2); }
+
+  .hero-stats {
+    padding:28px 40px; display:flex; gap:40px;
+    border-left:1px solid var(--border);
+  }
+
+  .hs { text-align:center; }
+  .hs-val  { font-size:2rem; font-weight:800; line-height:1; }
+  .hs-label {
+    font-family:'Space Mono',monospace; font-size:0.6rem;
+    letter-spacing:2px; color:var(--muted); margin-top:4px;
+  }
+
+  .content {
+    position:relative; z-index:1;
+    padding:24px 40px 40px; max-width:1200px; margin:0 auto;
+    display:grid; grid-template-columns:2fr 1fr; gap:20px;
+  }
+
+  .section-label {
+    font-family:'Space Mono',monospace; font-size:0.65rem;
+    letter-spacing:3px; color:var(--muted); text-transform:uppercase;
+    display:flex; align-items:center; gap:8px; margin-bottom:14px;
+  }
+
+  .section-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  .table-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:12px; overflow:hidden;
+  }
+
+  .table-header {
+    padding:18px 20px; border-bottom:1px solid var(--border);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+
+  .table-title { font-weight:700; font-size:0.9rem; }
+
+  .filter-row { display:flex; gap:8px; align-items:center; }
+
+  .filter-btn {
+    font-family:'Space Mono',monospace; font-size:0.62rem;
+    padding:6px 12px; border-radius:4px; border:1px solid var(--border);
+    background:transparent; color:var(--muted); cursor:pointer;
+    letter-spacing:1px; transition:all 0.2s;
+  }
+
+  .filter-btn:hover, .filter-btn.active {
+    border-color:var(--accent); color:var(--accent);
+    background:rgba(0,229,255,0.05);
+  }
+
+  table { width:100%; border-collapse:collapse; }
+
+  thead tr { border-bottom:1px solid var(--border); background:rgba(0,0,0,0.2); }
+
+  thead th {
+    font-family:'Space Mono',monospace; font-size:0.6rem;
+    letter-spacing:2px; color:var(--muted); text-transform:uppercase;
+    padding:12px 20px; text-align:left;
+  }
+
+  tbody tr { border-bottom:1px solid rgba(30,45,69,0.5); transition:background 0.15s; }
+  tbody tr:last-child { border-bottom:none; }
+  tbody tr:hover { background:rgba(0,229,255,0.03); }
+  tbody td { padding:14px 20px; font-size:0.85rem; }
+
+  .status-pill {
+    display:inline-flex; align-items:center; gap:5px;
+    font-family:'Space Mono',monospace; font-size:0.6rem;
+    padding:4px 10px; border-radius:20px; letter-spacing:1px;
+  }
+
+  .status-pill.present { background:rgba(0,255,136,0.1); color:var(--green); border:1px solid rgba(0,255,136,0.25); }
+  .status-pill.absent  { background:rgba(255,68,85,0.1);  color:var(--red);   border:1px solid rgba(255,68,85,0.25); }
+  .status-pill.late    { background:rgba(255,215,0,0.1);  color:var(--gold);  border:1px solid rgba(255,215,0,0.25); }
+
+  .dot { width:5px; height:5px; border-radius:50%; background:currentColor; }
+
+  .sidebar { display:flex; flex-direction:column; gap:20px; }
+
+  .ring-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:12px; padding:24px; text-align:center;
+  }
+
+  .ring-wrapper {
+    position:relative; width:140px; height:140px; margin:0 auto 16px;
+  }
+
+  .ring-wrapper svg { transform:rotate(-90deg); }
+
+  .ring-percent {
+    position:absolute; top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    font-size:1.8rem; font-weight:800;
+    color:var(--accent); font-family:'Space Mono',monospace;
+  }
+
+  .ring-label {
+    font-family:'Space Mono',monospace; font-size:0.65rem;
+    letter-spacing:2px; color:var(--muted); margin-top:4px;
+  }
+
+  .loc-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:12px; overflow:hidden;
+  }
+
+  .loc-header {
+    padding:16px 20px; border-bottom:1px solid var(--border);
+    font-weight:700; font-size:0.9rem;
+  }
+
+  .loc-list { list-style:none; }
+
+  .loc-item {
+    padding:14px 20px; border-bottom:1px solid rgba(30,45,69,0.5);
+    display:flex; align-items:center; gap:12px; font-size:0.82rem;
+  }
+
+  .loc-item:last-child { border-bottom:none; }
+
+  .loc-icon {
+    width:32px; height:32px; border-radius:8px;
+    background:rgba(0,229,255,0.07); border:1px solid rgba(0,229,255,0.15);
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; font-size:0.9rem;
+  }
+
+  .loc-name { font-weight:600; font-size:0.8rem; }
+  .loc-time { font-family:'Space Mono',monospace; font-size:0.62rem; color:var(--muted); margin-top:2px; }
+
+  .month-grid {
+    display:grid; grid-template-columns:repeat(7,1fr);
+    gap:5px; padding:0 20px 20px;
+  }
+
+  .day-dot { aspect-ratio:1; border-radius:4px; background:var(--border); transition:background 0.2s; }
+  .day-dot.present { background:var(--green); opacity:0.7; }
+  .day-dot.absent  { background:var(--red);   opacity:0.4; }
+  .day-dot.future  { background:var(--border); opacity:0.4; }
+  .day-dot.today   { outline:2px solid var(--accent); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="index.html">
+    <span class="logo-dot"></span>
+    FACE<span style="color:var(--text)">ATTEND</span>
+  </a>
+  <div class="nav-links">
+    <a href="index.html">SCAN</a>
+    <a href="user-dashboard.html" class="active">MY RECORD</a>
+    <a href="admin-dashboard.html">ADMIN</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="profile-hero">
+    <div class="hero-accent-bar"></div>
+    <div class="hero-info">
+      <div class="student-avatar">🎓</div>
+      <div class="student-details">
+        <h1 id="heroName">Desmond Zambogunaa</h1>
+        <div class="sub" id="heroIndex">PU/CS/2024/003</div>
+        <div class="student-tags">
+          <span class="tag tag-blue"   id="heroProgram">BSc. Computer Science</span>
+          <span class="tag tag-purple" id="heroLevel">Sophomore</span>
+          <span class="tag tag-green">ACTIVE</span>
+        </div>
+      </div>
+    </div>
+    <div class="hero-stats">
+      <div class="hs">
+        <div class="hs-val" style="color:var(--green)" id="heroPresent">18</div>
+        <div class="hs-label">PRESENT</div>
+      </div>
+      <div class="hs">
+        <div class="hs-val" style="color:var(--red)" id="heroAbsent">3</div>
+        <div class="hs-label">ABSENT</div>
+      </div>
+      <div class="hs">
+        <div class="hs-val" style="color:var(--gold)" id="heroLate">2</div>
+        <div class="hs-label">LATE</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div>
+    <div class="section-label">Attendance History</div>
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">March 2025</div>
+        <div class="filter-row">
+          <button class="filter-btn active" onclick="filterTable('all',this)">ALL</button>
+          <button class="filter-btn" onclick="filterTable('present',this)">PRESENT</button>
+          <button class="filter-btn" onclick="filterTable('absent',this)">ABSENT</button>
+          <button class="filter-btn" onclick="filterTable('late',this)">LATE</button>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th><th>Day</th><th>Time In</th><th>Location</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sidebar">
+
+    <div class="ring-card">
+      <div class="section-label">Attendance Rate</div>
+      <div class="ring-wrapper">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <circle cx="70" cy="70" r="56" fill="none" stroke="var(--border)" stroke-width="10"/>
+          <circle cx="70" cy="70" r="56" fill="none" stroke="var(--accent)" stroke-width="10"
+            stroke-dasharray="351.86" stroke-dashoffset="63.34" stroke-linecap="round"/>
+        </svg>
+        <div class="ring-percent">82%</div>
+      </div>
+      <div class="ring-label">THIS SEMESTER</div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header" style="padding:16px 20px;">
+        <div class="table-title" style="font-size:0.85rem;">March 2025 Overview</div>
+      </div>
+      <div style="padding:16px 20px 8px;display:flex;gap:16px;font-family:'Space Mono',monospace;font-size:0.6rem;">
+        <span style="color:var(--green);">● Present</span>
+        <span style="color:var(--red);">● Absent</span>
+        <span style="color:var(--border);">● Future</span>
+      </div>
+      <div class="month-grid" id="monthGrid"></div>
+    </div>
+
+    <div class="loc-card">
+      <div class="loc-header">Recent Locations</div>
+      <ul class="loc-list" id="locList"></ul>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const records = [
+  { date:"2025-03-18", day:"Tuesday",   timeIn:"08:02", location:"Palm University College", status:"present" },
+  { date:"2025-03-17", day:"Monday",    timeIn:"08:45", location:"Palm University College", status:"late"    },
+  { date:"2025-03-14", day:"Friday",    timeIn:"07:58", location:"Palm University College", status:"present" },
+  { date:"2025-03-13", day:"Thursday",  timeIn:"08:01", location:"Palm University College", status:"present" },
+  { date:"2025-03-12", day:"Wednesday", timeIn:"—",     location:"—",                       status:"absent"  },
+  { date:"2025-03-11", day:"Tuesday",   timeIn:"08:10", location:"Palm University College", status:"present" },
+  { date:"2025-03-10", day:"Monday",    timeIn:"09:15", location:"Palm University College", status:"late"    },
+  { date:"2025-03-07", day:"Friday",    timeIn:"08:00", location:"Palm University College", status:"present" },
+  { date:"2025-03-06", day:"Thursday",  timeIn:"—",     location:"—",                       status:"absent"  },
+  { date:"2025-03-05", day:"Wednesday", timeIn:"07:55", location:"Palm University College", status:"present" },
+  { date:"2025-03-04", day:"Tuesday",   timeIn:"08:03", location:"Palm University College", status:"present" },
+  { date:"2025-03-03", day:"Monday",    timeIn:"08:20", location:"Palm University College", status:"present" },
+];
+
+function renderTable(filter) {
+  const tbody = document.getElementById("tableBody");
+  tbody.innerHTML = "";
+  const data = filter === 'all' ? records : records.filter(r => r.status === filter);
+  const pillMap = {
+    present:`<span class="status-pill present"><span class="dot"></span>PRESENT</span>`,
+    absent: `<span class="status-pill absent"><span class="dot"></span>ABSENT</span>`,
+    late:   `<span class="status-pill late"><span class="dot"></span>LATE</span>`
+  };
+  data.forEach(r => {
+    tbody.innerHTML += `
+      <tr>
+        <td style="font-family:'Space Mono',monospace;font-size:0.78rem;">${r.date}</td>
+        <td style="color:var(--muted);font-size:0.82rem;">${r.day}</td>
+        <td style="font-family:'Space Mono',monospace;font-size:0.78rem;">${r.timeIn}</td>
+        <td style="font-size:0.78rem;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.location}</td>
+        <td>${pillMap[r.status]}</td>
+      </tr>`;
+  });
+}
+
+function filterTable(f, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable(f);
+}
+
+renderTable('all');
+
+// Month dots
+const grid = document.getElementById("monthGrid");
+const today = new Date();
+const daysInMonth = new Date(today.getFullYear(), today.getMonth()+1, 0).getDate();
+const presentDays = new Set([3,4,5,7,10,11,13,14,17,18]);
+const absentDays  = new Set([6,12]);
+
+for (let d = 1; d <= daysInMonth; d++) {
+  const div = document.createElement("div");
+  div.className = "day-dot";
+  if (d > today.getDate())      div.classList.add("future");
+  else if (presentDays.has(d))  div.classList.add("present");
+  else if (absentDays.has(d))   div.classList.add("absent");
+  if (d === today.getDate())    div.classList.add("today");
+  div.title = `March ${d}`;
+  grid.appendChild(div);
+}
+
+// Locations
+const locations = [
+  { name:"Palm University College", time:"Today 08:02", icon:"🏛️" },
+  { name:"Palm University College", time:"Mon 08:45",   icon:"🏛️" },
+  { name:"Palm University College", time:"Fri 07:58",   icon:"🏛️" },
+];
+
+const locList = document.getElementById("locList");
+locations.forEach(l => {
+  locList.innerHTML += `
+    <li class="loc-item">
+      <div class="loc-icon">${l.icon}</div>
+      <div>
+        <div class="loc-name">${l.name}</div>
+        <div class="loc-time">${l.time}</div>
+      </div>
+    </li>`;
+});
+</script>
+</body>
+</html>
