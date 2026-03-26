@@ -2,8 +2,9 @@ import face_recognition
 import os
 import pickle
 
-KNOWN_FACES_DIR = "known_faces"
-ENCODINGS_FILE  = "encodings.pkl"
+BASE_DIR       = os.path.dirname(os.path.abspath(__file__))
+KNOWN_FACES_DIR = os.path.join(BASE_DIR, "known_faces")
+ENCODINGS_FILE  = os.path.join(BASE_DIR, "encodings.pkl")
 
 known_encodings = []
 known_names     = []
