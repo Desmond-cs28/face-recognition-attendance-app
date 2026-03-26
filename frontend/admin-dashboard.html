@@ -28,6 +28,172 @@
     background-size:40px 40px; pointer-events:none; z-index:0;
   }
 
+  /* ══ LOGIN SCREEN ══ */
+  #loginScreen {
+    position:fixed; inset:0; z-index:1000;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--bg);
+  }
+
+  #loginScreen.hidden { display:none; }
+
+  .login-wrap { width:100%; max-width:420px; padding:24px; }
+
+  .login-brand { text-align:center; margin-bottom:36px; }
+
+  .login-brand-logo {
+    display:inline-flex; align-items:center; gap:10px;
+    font-family:'Space Mono',monospace; font-size:1.1rem;
+    font-weight:700; color:var(--accent); letter-spacing:2px; margin-bottom:10px;
+  }
+
+  .login-brand-dot {
+    width:10px; height:10px; border-radius:50%;
+    background:var(--accent); box-shadow:0 0 14px var(--accent);
+    animation:pulse 2s infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+
+  .login-brand p {
+    font-family:'Space Mono',monospace; font-size:0.62rem;
+    color:var(--muted); letter-spacing:3px; text-transform:uppercase;
+  }
+
+  .login-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:16px; overflow:hidden;
+  }
+
+  .login-card-head {
+    padding:24px 28px 20px; border-bottom:1px solid var(--border); position:relative;
+  }
+
+  .login-card-head::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+
+  .login-card-head h2 { font-size:1.2rem; font-weight:800; margin-bottom:4px; }
+
+  .login-card-head p {
+    font-family:'Space Mono',monospace; font-size:0.62rem;
+    color:var(--muted); letter-spacing:2px;
+  }
+
+  .login-shield {
+    position:absolute; right:28px; top:50%; transform:translateY(-50%);
+    font-size:2rem; opacity:0.15;
+  }
+
+  .login-body { padding:28px; display:flex; flex-direction:column; gap:18px; }
+
+  .login-field { display:flex; flex-direction:column; gap:6px; }
+
+  .login-label {
+    font-family:'Space Mono',monospace; font-size:0.6rem;
+    letter-spacing:2px; color:var(--muted); text-transform:uppercase;
+  }
+
+  .login-input-wrap { position:relative; display:flex; align-items:center; }
+
+  .login-input-icon {
+    position:absolute; left:12px; font-size:0.9rem; pointer-events:none; opacity:0.5;
+  }
+
+  .login-input {
+    width:100%; background:var(--surface); border:1px solid var(--border);
+    border-radius:8px; padding:11px 12px 11px 38px;
+    font-family:'Space Mono',monospace; font-size:0.78rem;
+    color:var(--text); letter-spacing:1px; outline:none;
+    transition:border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .login-input:focus {
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(0,229,255,0.08);
+  }
+
+  .login-input::placeholder { color:var(--muted); }
+
+  .toggle-pw {
+    position:absolute; right:12px; background:none; border:none;
+    color:var(--muted); cursor:pointer; font-size:0.85rem;
+    padding:4px; transition:color 0.2s;
+  }
+
+  .toggle-pw:hover { color:var(--accent); }
+
+  .login-error {
+    display:none; align-items:center; gap:8px;
+    background:rgba(255,68,85,0.08); border:1px solid rgba(255,68,85,0.25);
+    border-radius:8px; padding:10px 14px;
+    font-family:'Space Mono',monospace; font-size:0.68rem;
+    color:var(--red); letter-spacing:1px;
+  }
+
+  .login-error.show { display:flex; }
+
+  .login-btn {
+    width:100%; padding:13px;
+    background:linear-gradient(135deg, rgba(0,229,255,0.15), rgba(124,58,237,0.15));
+    border:1px solid var(--accent); border-radius:8px;
+    font-family:'Space Mono',monospace; font-size:0.78rem;
+    font-weight:700; letter-spacing:2px; color:var(--accent);
+    cursor:pointer; transition:all 0.2s;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+
+  .login-btn:hover {
+    background:linear-gradient(135deg, rgba(0,229,255,0.25), rgba(124,58,237,0.25));
+    box-shadow:0 0 20px rgba(0,229,255,0.15);
+  }
+
+  .login-btn:active { transform:scale(0.98); }
+  .login-btn.loading { opacity:0.6; pointer-events:none; }
+
+  .login-footer {
+    padding:16px 28px; border-top:1px solid var(--border);
+    text-align:center; font-family:'Space Mono',monospace;
+    font-size:0.6rem; color:var(--muted); letter-spacing:1px;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+
+  .login-footer-dot {
+    width:5px; height:5px; border-radius:50%;
+    background:var(--green); box-shadow:0 0 6px var(--green);
+    animation:pulse 2s infinite;
+  }
+
+  .attempt-dots { display:flex; gap:6px; justify-content:center; margin-top:2px; }
+
+  .attempt-dot {
+    width:8px; height:8px; border-radius:50%;
+    background:var(--border); transition:background 0.3s;
+  }
+
+  .attempt-dot.used { background:var(--red); box-shadow:0 0 6px var(--red); }
+
+  /* ══ LOCKOUT SCREEN ══ */
+  #lockoutScreen {
+    display:none; position:fixed; inset:0; z-index:1001;
+    align-items:center; justify-content:center; background:var(--bg);
+  }
+
+  #lockoutScreen.show { display:flex; }
+
+  .lockout-card {
+    background:var(--card); border:1px solid rgba(255,68,85,0.4);
+    border-radius:16px; padding:40px; text-align:center;
+    max-width:380px; width:90%; box-shadow:0 0 40px rgba(255,68,85,0.1);
+  }
+
+  .lockout-icon    { font-size:3rem; margin-bottom:16px; }
+  .lockout-title   { font-size:1.2rem; font-weight:800; color:var(--red); margin-bottom:8px; }
+  .lockout-msg     { font-family:'Space Mono',monospace; font-size:0.68rem; color:var(--muted); letter-spacing:1px; line-height:1.8; margin-bottom:20px; }
+  .lockout-timer   { font-family:'Space Mono',monospace; font-size:2rem; font-weight:700; color:var(--red); margin-bottom:20px; }
+
+  /* ══ NAV ══ */
   nav {
     position:relative; z-index:10;
     display:flex; align-items:center; justify-content:space-between;
@@ -47,9 +213,7 @@
     animation:pulse 2s infinite;
   }
 
-  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
-
-  .nav-links { display:flex; gap:8px; }
+  .nav-links { display:flex; gap:8px; align-items:center; }
 
   .nav-links a {
     font-family:'Space Mono',monospace; font-size:0.75rem; color:var(--muted);
@@ -58,21 +222,35 @@
   }
 
   .nav-links a:hover, .nav-links a.active {
-    color:var(--accent); border-color:var(--accent);
-    background:rgba(0,229,255,0.05);
+    color:var(--accent); border-color:var(--accent); background:rgba(0,229,255,0.05);
   }
 
+  .nav-admin-badge {
+    font-family:'Space Mono',monospace; font-size:0.6rem;
+    padding:5px 12px; border-radius:20px; letter-spacing:1px;
+    background:rgba(124,58,237,0.1); color:#a78bfa;
+    border:1px solid rgba(124,58,237,0.3);
+    display:flex; align-items:center; gap:6px;
+  }
+
+  .logout-btn {
+    font-family:'Space Mono',monospace; font-size:0.65rem; letter-spacing:1px;
+    padding:7px 14px; border-radius:6px;
+    border:1px solid rgba(255,68,85,0.3); background:rgba(255,68,85,0.06);
+    color:var(--red); cursor:pointer; transition:all 0.2s;
+    display:flex; align-items:center; gap:6px;
+  }
+
+  .logout-btn:hover { background:rgba(255,68,85,0.14); border-color:var(--red); }
+
+  /* ══ LAYOUT ══ */
   .admin-layout {
     position:relative; z-index:1;
     display:grid; grid-template-columns:220px 1fr;
     min-height:calc(100vh - 65px);
   }
 
-  .sidebar {
-    border-right:1px solid var(--border); padding:24px 0;
-    background:rgba(9,14,26,0.6);
-  }
-
+  .sidebar { border-right:1px solid var(--border); padding:24px 0; background:rgba(9,14,26,0.6); }
   .sidebar-section { padding:0 16px; margin-bottom:24px; }
 
   .sidebar-label {
@@ -98,21 +276,12 @@
   .main { padding:30px 36px; overflow-y:auto; }
 
   .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
-
-  .page-title { font-size:1.5rem; font-weight:800; }
-
-  .page-sub {
-    font-family:'Space Mono',monospace; font-size:0.65rem;
-    color:var(--muted); letter-spacing:2px; margin-top:4px;
-  }
+  .page-title  { font-size:1.5rem; font-weight:800; }
+  .page-sub    { font-family:'Space Mono',monospace; font-size:0.65rem; color:var(--muted); letter-spacing:2px; margin-top:4px; }
 
   .kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:24px; }
 
-  .kpi-card {
-    background:var(--card); border:1px solid var(--border);
-    border-radius:12px; padding:20px; position:relative; overflow:hidden;
-  }
-
+  .kpi-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; position:relative; overflow:hidden; }
   .kpi-card::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; }
   .kpi-card.blue::before  { background:var(--accent); }
   .kpi-card.green::before { background:var(--green);  }
@@ -128,31 +297,22 @@
   .kpi-sub { font-size:0.75rem; color:var(--muted); }
 
   .panels { display:grid; grid-template-columns:1fr 340px; gap:20px; }
-
-  .panel { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
-
-  .panel-head {
-    padding:18px 20px; border-bottom:1px solid var(--border);
-    display:flex; justify-content:space-between; align-items:center;
-  }
-
-  .panel-title { font-weight:700; font-size:0.9rem; }
+  .panel  { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
 
   .btn {
     font-family:'Space Mono',monospace; font-size:0.65rem; letter-spacing:1px;
     padding:8px 16px; border-radius:6px; border:1px solid; cursor:pointer;
-    transition:all 0.2s; display:inline-flex; align-items:center; gap:6px;
-    text-decoration:none;
+    transition:all 0.2s; display:inline-flex; align-items:center; gap:6px; text-decoration:none;
   }
 
   .btn-primary { background:rgba(0,229,255,0.1); border-color:var(--accent); color:var(--accent); }
   .btn-primary:hover { background:rgba(0,229,255,0.2); }
   .btn-danger  { background:rgba(255,68,85,0.08);  border-color:var(--red);   color:var(--red);   }
-  .btn-danger:hover  { background:rgba(255,68,85,0.18);  }
+  .btn-danger:hover  { background:rgba(255,68,85,0.18); }
   .btn-success { background:rgba(0,255,136,0.08);  border-color:var(--green); color:var(--green); }
   .btn-success:hover { background:rgba(0,255,136,0.18); }
   .btn-gold    { background:rgba(255,215,0,0.08);  border-color:var(--gold);  color:var(--gold);  }
-  .btn-gold:hover    { background:rgba(255,215,0,0.18);  }
+  .btn-gold:hover    { background:rgba(255,215,0,0.18); }
 
   .search-row {
     padding:14px 20px; border-bottom:1px solid var(--border);
@@ -161,20 +321,17 @@
 
   .search-input {
     flex:1; min-width:160px; background:var(--surface); border:1px solid var(--border);
-    border-radius:6px; padding:8px 14px;
-    font-family:'Space Mono',monospace; font-size:0.72rem;
-    color:var(--text); letter-spacing:1px; outline:none; transition:border-color 0.2s;
+    border-radius:6px; padding:8px 14px; font-family:'Space Mono',monospace;
+    font-size:0.72rem; color:var(--text); letter-spacing:1px; outline:none; transition:border-color 0.2s;
   }
 
   .search-input:focus { border-color:var(--accent); }
   .search-input::placeholder { color:var(--muted); }
 
   .date-input {
-    background:var(--surface); border:1px solid var(--border);
-    border-radius:6px; padding:8px 12px;
-    font-family:'Space Mono',monospace; font-size:0.68rem;
-    color:var(--text); outline:none; transition:border-color 0.2s;
-    color-scheme:dark;
+    background:var(--surface); border:1px solid var(--border); border-radius:6px;
+    padding:8px 12px; font-family:'Space Mono',monospace; font-size:0.68rem;
+    color:var(--text); outline:none; transition:border-color 0.2s; color-scheme:dark;
   }
 
   .date-input:focus { border-color:var(--accent); }
@@ -196,9 +353,8 @@
   .action-row { display:flex; gap:6px; }
 
   .action-btn {
-    width:30px; height:30px; border-radius:6px;
-    border:1px solid var(--border); background:transparent;
-    cursor:pointer; display:flex; align-items:center;
+    width:30px; height:30px; border-radius:6px; border:1px solid var(--border);
+    background:transparent; cursor:pointer; display:flex; align-items:center;
     justify-content:center; font-size:0.85rem; transition:all 0.2s;
   }
 
@@ -214,25 +370,20 @@
   .status-pill.present { background:rgba(0,255,136,0.1); color:var(--green); border:1px solid rgba(0,255,136,0.25); }
   .status-pill.absent  { background:rgba(255,68,85,0.1);  color:var(--red);   border:1px solid rgba(255,68,85,0.25); }
   .status-pill.late    { background:rgba(255,215,0,0.1);  color:var(--gold);  border:1px solid rgba(255,215,0,0.25); }
-
   .dot { width:4px; height:4px; border-radius:50%; background:currentColor; }
 
   .right-panels { display:flex; flex-direction:column; gap:16px; }
 
   .action-panel { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
-
   .action-panel-head { padding:16px 20px; border-bottom:1px solid var(--border); font-weight:700; font-size:0.85rem; }
-
   .action-panel-body { padding:16px 20px; display:flex; flex-direction:column; gap:10px; }
 
   .form-field { display:flex; flex-direction:column; gap:5px; }
-
   .form-label { font-family:'Space Mono',monospace; font-size:0.6rem; letter-spacing:1px; color:var(--muted); text-transform:uppercase; }
 
   .form-input {
-    background:var(--surface); border:1px solid var(--border);
-    border-radius:6px; padding:9px 12px;
-    font-family:'Syne',sans-serif; font-size:0.82rem;
+    background:var(--surface); border:1px solid var(--border); border-radius:6px;
+    padding:9px 12px; font-family:'Syne',sans-serif; font-size:0.82rem;
     color:var(--text); outline:none; width:100%; transition:border-color 0.2s;
   }
 
@@ -240,9 +391,8 @@
   .form-input::placeholder { color:var(--muted); }
 
   .form-select {
-    background:var(--surface); border:1px solid var(--border);
-    border-radius:6px; padding:9px 12px;
-    font-family:'Syne',sans-serif; font-size:0.82rem;
+    background:var(--surface); border:1px solid var(--border); border-radius:6px;
+    padding:9px 12px; font-family:'Syne',sans-serif; font-size:0.82rem;
     color:var(--text); outline:none; width:100%;
     transition:border-color 0.2s; appearance:none; -webkit-appearance:none;
   }
@@ -272,11 +422,7 @@
 
   @keyframes slideUp { from{transform:translateY(40px);opacity:0} to{transform:translateY(0);opacity:1} }
 
-  .modal-head {
-    padding:20px 24px; border-bottom:1px solid var(--border);
-    display:flex; justify-content:space-between; align-items:center;
-  }
-
+  .modal-head { padding:20px 24px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
   .modal-title { font-weight:800; font-size:1rem; }
 
   .modal-close {
@@ -287,8 +433,7 @@
 
   .modal-close:hover { border-color:var(--red); color:var(--red); }
 
-  .modal-body { padding:24px; display:flex; flex-direction:column; gap:14px; }
-
+  .modal-body   { padding:24px; display:flex; flex-direction:column; gap:14px; }
   .modal-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:10px; }
 
   .pagination {
@@ -300,10 +445,9 @@
   .page-btns { display:flex; gap:6px; }
 
   .page-btn {
-    width:28px; height:28px; border-radius:4px;
-    border:1px solid var(--border); background:transparent;
-    color:var(--muted); cursor:pointer; display:flex; align-items:center;
-    justify-content:center; font-size:0.75rem; transition:all 0.2s;
+    width:28px; height:28px; border-radius:4px; border:1px solid var(--border);
+    background:transparent; color:var(--muted); cursor:pointer;
+    display:flex; align-items:center; justify-content:center; font-size:0.75rem; transition:all 0.2s;
   }
 
   .page-btn:hover, .page-btn.active { border-color:var(--accent); color:var(--accent); }
@@ -328,13 +472,104 @@
     body { background:#fff; color:#000; }
     .main { padding:0; }
     .panel { border:1px solid #ccc; }
-    thead tr { background:#f0f0f0 !important; }
-    .status-pill { border:1px solid #ccc !important; }
     .admin-layout { grid-template-columns:1fr; }
+    #loginScreen, #lockoutScreen { display:none !important; }
   }
 </style>
 </head>
 <body>
+
+<!-- ══ LOGIN SCREEN ══ -->
+<div id="loginScreen">
+  <div class="login-wrap">
+
+    <div class="login-brand">
+      <div class="login-brand-logo">
+        <span class="login-brand-dot"></span>
+        FACE<span style="color:var(--text)">ATTEND</span>
+      </div>
+      <p>Restricted — Admin Access Only</p>
+    </div>
+
+    <div class="login-card">
+      <div class="login-card-head">
+        <h2>Admin Sign In</h2>
+        <p>Enter your credentials to continue</p>
+        <span class="login-shield">🛡️</span>
+      </div>
+
+      <div class="login-body">
+
+        <div class="login-error" id="loginError">
+          <span>⚠</span>
+          <span id="loginErrorMsg">Invalid username or password.</span>
+        </div>
+
+        <div class="login-field">
+          <label class="login-label">Username</label>
+          <div class="login-input-wrap">
+            <span class="login-input-icon">👤</span>
+            <input class="login-input" type="text" id="loginUser"
+                   placeholder="admin" autocomplete="username"
+                   onkeydown="if(event.key==='Enter') attemptLogin()">
+          </div>
+        </div>
+
+        <div class="login-field">
+          <label class="login-label">Password</label>
+          <div class="login-input-wrap">
+            <span class="login-input-icon">🔒</span>
+            <input class="login-input" type="password" id="loginPass"
+                   placeholder="••••••••" autocomplete="current-password"
+                   onkeydown="if(event.key==='Enter') attemptLogin()">
+            <button class="toggle-pw" type="button" onclick="togglePw()" id="togglePwBtn">👁</button>
+          </div>
+        </div>
+
+        <div style="text-align:center;">
+          <div style="font-family:'Space Mono',monospace;font-size:0.58rem;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">
+            ATTEMPTS REMAINING
+          </div>
+          <div class="attempt-dots">
+            <div class="attempt-dot" id="dot1"></div>
+            <div class="attempt-dot" id="dot2"></div>
+            <div class="attempt-dot" id="dot3"></div>
+          </div>
+        </div>
+
+        <button class="login-btn" id="loginBtn" onclick="attemptLogin()">
+          <span id="loginBtnText">🔐 SIGN IN</span>
+        </button>
+
+      </div>
+
+      <div class="login-footer">
+        <span class="login-footer-dot"></span>
+        Secured · Palm University College
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ LOCKOUT SCREEN ══ -->
+<div id="lockoutScreen">
+  <div class="lockout-card">
+    <div class="lockout-icon">🔒</div>
+    <div class="lockout-title">Account Locked</div>
+    <div class="lockout-msg">
+      Too many failed attempts.<br>
+      Please wait before trying again.
+    </div>
+    <div class="lockout-timer" id="lockoutTimer">00:30</div>
+    <div style="font-family:'Space Mono',monospace;font-size:0.62rem;color:var(--muted);letter-spacing:1px;">
+      Contact your system administrator<br>if you need immediate access.
+    </div>
+  </div>
+</div>
+
+<!-- ══ DASHBOARD (hidden until logged in) ══ -->
+<div id="dashboardContent" style="display:none;">
 
 <nav>
   <a class="logo" href="index.html">
@@ -345,12 +580,13 @@
     <a href="index.html">SCAN</a>
     <a href="user-dashboard.html">MY RECORD</a>
     <a href="admin-dashboard.html" class="active">ADMIN</a>
+    <span class="nav-admin-badge">🛡️ ADMIN</span>
+    <button class="logout-btn" onclick="logout()">⏻ LOGOUT</button>
   </div>
 </nav>
 
 <div class="admin-layout">
 
-  <!-- Sidebar -->
   <div class="sidebar">
     <div class="sidebar-section">
       <div class="sidebar-label">Overview</div>
@@ -375,13 +611,14 @@
       <a class="sidebar-item">
         <span class="sidebar-icon">⚙️</span> Settings
       </a>
+      <a class="sidebar-item" onclick="logout()" style="color:var(--red);">
+        <span class="sidebar-icon">⏻</span> Logout
+      </a>
     </div>
   </div>
 
-  <!-- Main -->
   <div class="main">
 
-    <!-- KPI Row -->
     <div class="kpi-row">
       <div class="kpi-card blue">
         <div class="kpi-label">Total Students</div>
@@ -405,10 +642,8 @@
       </div>
     </div>
 
-    <!-- Attendance Tab -->
     <div id="tab-attendance">
       <div class="panels">
-
         <div>
           <div class="page-header">
             <div>
@@ -420,7 +655,6 @@
               <button class="btn btn-success" onclick="exportCSV()">📥 CSV</button>
             </div>
           </div>
-
           <div class="panel">
             <div class="search-row">
               <input type="text" class="search-input" placeholder="Search by name or index…"
@@ -454,7 +688,6 @@
           </div>
         </div>
 
-        <!-- Right Panel -->
         <div class="right-panels">
           <div class="action-panel">
             <div class="action-panel-head">Quick Add Student</div>
@@ -518,11 +751,9 @@
             </div>
           </div>
         </div>
-
       </div>
     </div>
 
-    <!-- Students Tab -->
     <div id="tab-students" style="display:none;">
       <div class="page-header">
         <div>
@@ -557,8 +788,9 @@
 
   </div>
 </div>
+</div><!-- /dashboardContent -->
 
-<!-- Edit / Add Modal -->
+<!-- Edit Modal -->
 <div class="modal-overlay" id="editModal">
   <div class="modal">
     <div class="modal-head">
@@ -616,7 +848,7 @@
   </div>
 </div>
 
-<!-- Delete Confirm Modal -->
+<!-- Delete Modal -->
 <div class="modal-overlay" id="deleteModal">
   <div class="modal" style="width:400px;">
     <div class="modal-head">
@@ -641,7 +873,139 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ── Your real student data ─────────────────────────────────────
+// ══ CHANGE THESE CREDENTIALS ══
+const ADMIN_USERNAME = "admin";
+const ADMIN_PASSWORD = "palm2024";  // ← change this!
+const MAX_ATTEMPTS   = 3;
+const LOCKOUT_SECS   = 30;
+
+let failedAttempts = 0;
+let lockoutInterval = null;
+
+window.addEventListener('DOMContentLoaded', () => {
+  if (sessionStorage.getItem('adminLoggedIn') === 'true') {
+    showDashboard();
+  }
+});
+
+function togglePw() {
+  const input = document.getElementById('loginPass');
+  const btn   = document.getElementById('togglePwBtn');
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁';
+  }
+}
+
+function attemptLogin() {
+  const user  = document.getElementById('loginUser').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const btn   = document.getElementById('loginBtn');
+  const errEl = document.getElementById('loginError');
+  const errMsg = document.getElementById('loginErrorMsg');
+
+  btn.classList.add('loading');
+  document.getElementById('loginBtnText').textContent = '⏳ CHECKING…';
+
+  setTimeout(() => {
+    btn.classList.remove('loading');
+    document.getElementById('loginBtnText').textContent = '🔐 SIGN IN';
+
+    if (user === ADMIN_USERNAME && pass === ADMIN_PASSWORD) {
+      errEl.classList.remove('show');
+      sessionStorage.setItem('adminLoggedIn', 'true');
+      showDashboard();
+    } else {
+      failedAttempts++;
+      markAttemptDot(failedAttempts);
+
+      if (failedAttempts >= MAX_ATTEMPTS) {
+        startLockout();
+        return;
+      }
+
+      const remaining = MAX_ATTEMPTS - failedAttempts;
+      errMsg.textContent = `Invalid credentials. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.`;
+      errEl.classList.add('show');
+
+      const card = document.querySelector('.login-card');
+      card.style.animation = 'none';
+      void card.offsetWidth;
+      card.style.animation = 'shake 0.4s ease';
+
+      document.getElementById('loginPass').value = '';
+      document.getElementById('loginPass').focus();
+    }
+  }, 600);
+}
+
+function markAttemptDot(n) {
+  for (let i = 1; i <= n; i++) {
+    const dot = document.getElementById('dot' + i);
+    if (dot) dot.classList.add('used');
+  }
+}
+
+function startLockout() {
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('lockoutScreen').classList.add('show');
+  let secs = LOCKOUT_SECS;
+  updateLockoutTimer(secs);
+  lockoutInterval = setInterval(() => {
+    secs--;
+    updateLockoutTimer(secs);
+    if (secs <= 0) { clearInterval(lockoutInterval); resetLogin(); }
+  }, 1000);
+}
+
+function updateLockoutTimer(s) {
+  const m = Math.floor(s / 60), sec = s % 60;
+  document.getElementById('lockoutTimer').textContent =
+    String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+}
+
+function resetLogin() {
+  failedAttempts = 0;
+  document.getElementById('lockoutScreen').classList.remove('show');
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('loginError').classList.remove('show');
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  for (let i = 1; i <= MAX_ATTEMPTS; i++) {
+    const dot = document.getElementById('dot' + i);
+    if (dot) dot.classList.remove('used');
+  }
+}
+
+function showDashboard() {
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('dashboardContent').style.display = 'block';
+  initDashboard();
+}
+
+function logout() {
+  sessionStorage.removeItem('adminLoggedIn');
+  document.getElementById('dashboardContent').style.display = 'none';
+  document.getElementById('loginScreen').classList.remove('hidden');
+  resetLogin();
+  showToast("Logged out successfully.", "info");
+}
+
+const shakeStyle = document.createElement('style');
+shakeStyle.textContent = `
+  @keyframes shake {
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-8px)}
+    40%{transform:translateX(8px)}
+    60%{transform:translateX(-5px)}
+    80%{transform:translateX(5px)}
+  }`;
+document.head.appendChild(shakeStyle);
+
+// ══ DASHBOARD DATA & LOGIC ══
 let attendanceData = [
   { id:1,  name:"Desmond Zambogunaa", index:"PU/CS/2024/003",  program:"BSc. Computer Science",       level:"Sophomore", timeIn:"08:02", location:"Palm University College", status:"present" },
   { id:2,  name:"Comfort Akorfa",     index:"PU/CS/2024/007",  program:"BSc. Computer Science",       level:"Sophomore", timeIn:"08:45", location:"Palm University College", status:"late"    },
@@ -671,14 +1035,21 @@ let studentsData = [
 let pendingDeleteId = null;
 let editingId = null;
 
-// ── Init ───────────────────────────────────────────────────────
-const now = new Date();
-document.getElementById("todayDate").textContent =
-  now.toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-document.getElementById("lastScanSummary").textContent = now.toLocaleTimeString('en-GB');
-document.getElementById("dateFilter").value = now.toISOString().slice(0,10);
+function initDashboard() {
+  const now = new Date();
+  document.getElementById("todayDate").textContent =
+    now.toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  document.getElementById("dateFilter").value = now.toISOString().slice(0,10);
+  updateKPIs();
+  renderAttendance(attendanceData);
+}
 
-// KPI counts from data
+const pillMap = {
+  present:`<span class="status-pill present"><span class="dot"></span>PRESENT</span>`,
+  absent: `<span class="status-pill absent"><span class="dot"></span>ABSENT</span>`,
+  late:   `<span class="status-pill late"><span class="dot"></span>LATE</span>`
+};
+
 function updateKPIs() {
   const present = attendanceData.filter(r => r.status === 'present').length;
   const absent  = attendanceData.filter(r => r.status === 'absent').length;
@@ -689,15 +1060,11 @@ function updateKPIs() {
   document.getElementById("kpiLate").textContent    = late;
   const rate = Math.round(((present + late) / attendanceData.length) * 100);
   document.getElementById("summaryRate").textContent = rate + "%";
-  // First/last scan
   const scanned = attendanceData.filter(r => r.timeIn !== "—").map(r => r.timeIn).sort();
-  document.getElementById("firstScan").textContent    = scanned.length ? scanned[0] : "—";
+  document.getElementById("firstScan").textContent       = scanned.length ? scanned[0] : "—";
   document.getElementById("lastScanSummary").textContent = scanned.length ? scanned[scanned.length-1] : "—";
 }
 
-updateKPIs();
-
-// ── Tab switching ──────────────────────────────────────────────
 function showTab(tab, el) {
   document.getElementById("tab-attendance").style.display = tab === 'attendance' ? '' : 'none';
   document.getElementById("tab-students").style.display   = tab === 'students'   ? '' : 'none';
@@ -706,14 +1073,6 @@ function showTab(tab, el) {
   if (tab === 'students') renderStudents(studentsData);
 }
 
-// ── Pill map ───────────────────────────────────────────────────
-const pillMap = {
-  present: `<span class="status-pill present"><span class="dot"></span>PRESENT</span>`,
-  absent:  `<span class="status-pill absent"><span class="dot"></span>ABSENT</span>`,
-  late:    `<span class="status-pill late"><span class="dot"></span>LATE</span>`
-};
-
-// ── Render Attendance Table ────────────────────────────────────
 function renderAttendance(data) {
   const tbody = document.getElementById("attendBody");
   tbody.innerHTML = "";
@@ -740,24 +1099,18 @@ function renderAttendance(data) {
         </td>
       </tr>`;
   });
-  document.getElementById("paginationInfo").textContent =
-    `Showing 1–${data.length} of ${data.length}`;
+  document.getElementById("paginationInfo").textContent = `Showing 1–${data.length} of ${data.length}`;
 }
 
-renderAttendance(attendanceData);
-
-// ── Filter rows ────────────────────────────────────────────────
 function filterRows() {
   const q      = document.getElementById("searchInput").value.toLowerCase();
   const status = document.getElementById("statusFilter").value;
-  const f = attendanceData.filter(r =>
+  renderAttendance(attendanceData.filter(r =>
     (r.name.toLowerCase().includes(q) || r.index.toLowerCase().includes(q)) &&
     (!status || r.status === status)
-  );
-  renderAttendance(f);
+  ));
 }
 
-// ── Render Students Table ──────────────────────────────────────
 function renderStudents(data) {
   const tbody = document.getElementById("studBody");
   tbody.innerHTML = "";
@@ -791,14 +1144,13 @@ function filterStudents() {
   ));
 }
 
-// ── Add Student ────────────────────────────────────────────────
 function addStudent() {
   const name    = document.getElementById("addName").value.trim();
   const index   = document.getElementById("addIndex").value.trim();
   const program = document.getElementById("addProgram").value;
   const level   = document.getElementById("addLevel").value;
   if (!name || !index || !program) { showToast("Please fill in all fields.", "error"); return; }
-  const rec = { id: Date.now(), name, index, program, level, timeIn:"—", location:"—", status:"absent" };
+  const rec = { id:Date.now(), name, index, program, level, timeIn:"—", location:"—", status:"absent" };
   attendanceData.push(rec);
   studentsData.push({ ...rec, rate:"0%" });
   renderAttendance(attendanceData);
@@ -814,7 +1166,6 @@ function handlePhoto(input) {
   if (f) document.getElementById("photoPreview").textContent = "📸 " + f.name;
 }
 
-// ── Edit Attendance Record ─────────────────────────────────────
 function editRecord(id) {
   const r = attendanceData.find(r => r.id === id);
   if (!r) return;
@@ -845,13 +1196,13 @@ function editStudent(id) {
 
 function saveEdit() {
   if (String(editingId).startsWith("stud-")) {
-    const id = parseInt(editingId.replace("stud-", ""));
+    const id = parseInt(editingId.replace("stud-",""));
     const s  = studentsData.find(s => s.id === id);
     if (s) {
-      s.name    = document.getElementById("editName").value;
-      s.index   = document.getElementById("editIndex").value;
+      s.name = document.getElementById("editName").value;
+      s.index = document.getElementById("editIndex").value;
       s.program = document.getElementById("editProgram").value;
-      s.level   = document.getElementById("editLevel").value;
+      s.level = document.getElementById("editLevel").value;
       renderStudents(studentsData);
     }
   } else {
@@ -872,7 +1223,6 @@ function saveEdit() {
   showToast("✓ Record updated.", "success");
 }
 
-// ── Delete ─────────────────────────────────────────────────────
 function deleteRecord(id, name) {
   pendingDeleteId = id;
   document.getElementById("deleteName").textContent = name;
@@ -888,31 +1238,25 @@ function confirmDelete() {
   showToast("Record deleted.", "error");
 }
 
-// ── Modal ──────────────────────────────────────────────────────
 function openModal(id)  { document.getElementById(id).classList.add("open"); }
 function closeModal(id) { document.getElementById(id).classList.remove("open"); }
 
-// ── Print ──────────────────────────────────────────────────────
 function printAttendance() { window.print(); }
 
-// ── Export CSV ─────────────────────────────────────────────────
 function exportCSV() {
   const headers = ["Name","Index","Programme","Level","Time In","Location","Status"];
-  const rows    = attendanceData.map(r =>
-    [`"${r.name}"`, r.index, `"${r.program}"`, r.level, r.timeIn, `"${r.location}"`, r.status].join(",")
+  const rows = attendanceData.map(r =>
+    [`"${r.name}"`,r.index,`"${r.program}"`,r.level,r.timeIn,`"${r.location}"`,r.status].join(",")
   );
-  const csv  = [headers.join(","), ...rows].join("\n");
-  const blob = new Blob([csv], { type:"text/csv" });
+  const csv  = [headers.join(","),...rows].join("\n");
+  const blob = new Blob([csv],{type:"text/csv"});
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement("a");
-  a.href     = url;
-  a.download = "attendance_" + new Date().toISOString().slice(0,10) + ".csv";
-  a.click();
+  a.href = url; a.download = "attendance_"+new Date().toISOString().slice(0,10)+".csv"; a.click();
   URL.revokeObjectURL(url);
   showToast("✓ CSV exported.", "info");
 }
 
-// ── Toast ──────────────────────────────────────────────────────
 function showToast(msg, type="info") {
   const t = document.getElementById("toast");
   t.textContent = msg;
