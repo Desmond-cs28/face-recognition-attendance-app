@@ -509,6 +509,14 @@ let scanLog = [];
 
 let lastScanByStudent = {};
 
+const BrowserProtocol = { File: "file:" };
+const DefaultDevApiPort = 8000;
+const fallback_api_origin = `http://127.0.0.1:${DefaultDevApiPort}`;
+const api_origin =
+  window.location.protocol === BrowserProtocol.File
+    ? fallback_api_origin
+    : window.location.origin;
+
 const video   = document.getElementById("video");
 const canvas  = document.getElementById("canvas");
 const overlay = document.getElementById("overlay");
@@ -790,7 +798,7 @@ video.addEventListener("play", () => {
       const controller = new AbortController();
       const tid = setTimeout(() => controller.abort(), 8000);
 
-      const res = await fetch("http://localhost:5000/recognize", {
+      const res = await fetch(`${api_origin}/recognize`, {
         method  : "POST",
         headers : { "Content-Type": "application/json" },
         signal  : controller.signal,

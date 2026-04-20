@@ -6,7 +6,7 @@ import numpy as np
 import base64
 import pickle
 import os
-from datetime import datetime, date, time as dtime
+from datetime import datetime, time as dtime
 from io import BytesIO
 from PIL import Image
 
@@ -23,6 +23,7 @@ DB_CONFIG = {
 
 ENCODINGS_FILE  = "encodings.pkl"
 LATE_THRESHOLD  = dtime(8, 15)   # scans after 08:15 AM marked late
+DEFAULT_APP_PORT = 8000
 
 # ── Load face encodings once at startup ──────────────────────
 def load_encodings():
@@ -370,8 +371,9 @@ def delete_scan(scan_id):
 
 
 if __name__ == "__main__":
+    app_port = int(os.environ.get("PORT", str(DEFAULT_APP_PORT)))
     print("\n" + "="*55)
     print("  🚀  FaceAttend backend running")
-    print("  📡  http://localhost:5000")
+    print(f"  📡  http://localhost:{app_port}")
     print("="*55 + "\n")
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(debug=True, host="0.0.0.0", port=app_port)
