@@ -1,379 +1,274 @@
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
-import face_recognition
-import mysql.connector
-import numpy as np
+"""Palm University College face-attendance server."""
+
 import base64
-import pickle
 import os
-from datetime import datetime, time as dtime
-from io import BytesIO
-from PIL import Image
+from datetime import timedelta
 
-app = Flask(__name__, static_folder=".")
-CORS(app)
+from flask import Flask, abort, jsonify, request, send_from_directory, session
+
+from constants import (
+    ADMIN_PASSWORD_ENV,
+    ADMIN_USERNAME,
+    ASSET_FILES,
+    DATA_URL_SEPARATOR,
+    DEFAULT_ADMIN_PASSWORD,
+    DEFAULT_APP_PORT,
+    EMPTY_TEXT,
+    HTML_TYPE,
+    HttpStatus,
+    MAX_IMAGE_BYTES,
+    SECRET_FILE,
+    SESSION_HOURS,
+    SESSION_KEY,
+)
+from database import connect, init_db
+from seed import import_known_faces
+from service import (
+    RegistryError,
+    add_student,
+    attendance_today,
+    check_location,
+    edit_student,
+    now_accra,
+    recognize,
+    reload_registry,
+    remove_student,
+    student_cards,
+)
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FRONTEND_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "frontend"))
+
+app = Flask(__name__)
+app.permanent_session_lifetime = timedelta(hours=SESSION_HOURS)
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+)
+_BOOTED = False
 
 
-DB_CONFIG = {
-    "host"    : "localhost",
-    "user"    : "root",
-    "password": "",          
-    "database": "faceattend"
-}
+def _secret():
+    path = os.path.join(BASE_DIR, SECRET_FILE)
+    if os.path.isfile(path):
+        with open(path, "r", encoding="utf-8") as handle:
+            return handle.read().strip()
+    token = os.urandom(32).hex()
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write(token)
+    return token
 
-ENCODINGS_FILE  = "encodings.pkl"
-LATE_THRESHOLD  = dtime(8, 15)   # scans after 08:15 AM marked late
-DEFAULT_APP_PORT = 8000
 
-# ── Load face encodings once at startup ──────────────────────
-def load_encodings():
-    if not os.path.exists(ENCODINGS_FILE):
-        print("⚠️  encodings.pkl not found. Run encode_faces.py first.")
-        return [], []
-    with open(ENCODINGS_FILE, "rb") as f:
-        data = pickle.load(f)
-    print(f"✅  Loaded {len(data['names'])} encoding(s): {data['names']}")
-    return data["encodings"], data["names"]
+app.secret_key = _secret()
 
-known_encodings, known_names = load_encodings()
 
-# ── DB helper ─────────────────────────────────────────────────
-def get_db():
-    return mysql.connector.connect(**DB_CONFIG)
+def boot_once():
+    global _BOOTED
+    if _BOOTED:
+        return
+    init_db()
+    with connect() as connection:
+        import_known_faces(connection, now_accra().isoformat(timespec="seconds"))
+        reload_registry(connection)
+    _BOOTED = True
 
-# ── Serve frontend files ──────────────────────────────────────
-@app.route("/")
-def index():
-    return send_from_directory(".", "index.html")
 
-@app.route("/<path:filename>")
-def static_files(filename):
-    return send_from_directory(".", filename)
+def admin_password():
+    return os.environ.get(ADMIN_PASSWORD_ENV, DEFAULT_ADMIN_PASSWORD)
 
-# ─────────────────────────────────────────────────────────────
-#  MAIN RECOGNITION ENDPOINT
-# ─────────────────────────────────────────────────────────────
-@app.route("/recognize", methods=["POST"])
-def recognize():
-    payload = request.get_json()
-    if not payload or "image" not in payload:
-        return jsonify({"name": None, "face_box": None}), 400
 
-    # Decode image
+def signed_in():
+    return session.get(SESSION_KEY) == ADMIN_USERNAME
+
+
+def fail(message, status=HttpStatus.BAD_REQUEST):
+    return jsonify({"message": message}), status
+
+
+def require_admin():
+    if signed_in():
+        return None
+    return fail("Sign in to the registry office first.", HttpStatus.UNAUTHORIZED)
+
+
+def _page(filename):
+    response = send_from_directory(FRONTEND_DIR, filename)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Content-Type"] = HTML_TYPE
+    return response
+
+
+def _upload_bytes(required):
+    upload = request.files.get("photo")
+    if upload is None or upload.filename == EMPTY_TEXT:
+        if required:
+            raise RegistryError("Choose a photograph of the student.")
+        return None
+    data = upload.read()
+    if len(data) > MAX_IMAGE_BYTES:
+        raise RegistryError("That photograph is too large.")
+    if not data:
+        raise RegistryError("That photograph is empty.")
+    return data
+
+
+def _scan_bytes(payload):
+    image = payload.get("image") or EMPTY_TEXT
+    if DATA_URL_SEPARATOR in image:
+        image = image.split(DATA_URL_SEPARATOR, 1)[1]
     try:
-        img_bytes = base64.b64decode(payload["image"])
-        pil_image = Image.open(BytesIO(img_bytes)).convert("RGB")
-        frame     = np.array(pil_image)
-    except Exception as e:
-        return jsonify({"name": "Unknown", "error": str(e)}), 400
-
-    # Detect faces
-    face_locations = face_recognition.face_locations(frame)
-    face_encodings = face_recognition.face_encodings(frame, face_locations)
-
-    if not face_locations:
-        return jsonify({"name": None, "face_box": None})
-
-    # Use first detected face
-    face_encoding = face_encodings[0]
-    loc           = face_locations[0]   # top, right, bottom, left
-
-    face_box = {
-        "top"   : loc[0],
-        "left"  : loc[3],
-        "width" : loc[1] - loc[3],
-        "height": loc[2] - loc[0]
-    }
-
-    # Match against known encodings
-    matches   = face_recognition.compare_faces(
-        known_encodings, face_encoding, tolerance=0.5
-    )
-    distances = face_recognition.face_distance(known_encodings, face_encoding)
-
-    name         = "Unknown"
-    student_info = {}
-
-    if len(distances) > 0 and any(matches):
-        best_idx = int(np.argmin(distances))
-        if matches[best_idx]:
-            name = known_names[best_idx]
-
-            try:
-                db     = get_db()
-                cursor = db.cursor(dictionary=True)
-
-                # Get student record
-                cursor.execute(
-                    "SELECT * FROM students WHERE name = %s", (name,)
-                )
-                student = cursor.fetchone()
-
-                if student:
-                    # Determine scan type (in or out)
-                    scan_type = detect_scan_type(cursor, student["id"])
-
-                    # Record the scan
-                    record_scan(
-                        cursor     = cursor,
-                        db         = db,
-                        student_id = student["id"],
-                        scan_type  = scan_type,
-                        latitude   = payload.get("latitude",  ""),
-                        longitude  = payload.get("longitude", ""),
-                        location   = payload.get("location",  "")
-                    )
-
-                    student_info = {
-                        "name"        : student["name"],
-                        "index_number": student["index_number"],
-                        "program"     : student["program"],
-                        "level"       : student["level"],
-                        "scan_type"   : scan_type
-                    }
-
-                cursor.close()
-                db.close()
-
-            except Exception as e:
-                print(f"[DB ERROR] {e}")
-                student_info = {"name": name, "scan_type": "in"}
-
-    return jsonify({
-        "name"        : student_info.get("name",         name),
-        "index_number": student_info.get("index_number", "—"),
-        "program"     : student_info.get("program",      "—"),
-        "level"       : student_info.get("level",        "—"),
-        "scan_type"   : student_info.get("scan_type",    None),
-        "face_box"    : face_box
-    })
+        raw = base64.b64decode(image, validate=False)
+    except Exception as error:
+        raise RegistryError("The camera frame could not be read.") from error
+    if raw == b"" or len(raw) > MAX_IMAGE_BYTES:
+        raise RegistryError("The camera frame could not be read.")
+    return raw
 
 
-# ─────────────────────────────────────────────────────────────
-#  SCAN TYPE AUTO-DETECT
-#  Last scan today = "in"  → next = "out"
-#  Last scan today = "out" → next = "in"
-#  No scan today           → "in"
-# ─────────────────────────────────────────────────────────────
-def detect_scan_type(cursor, student_id):
-    cursor.execute("""
-        SELECT scan_type FROM scans
-        WHERE student_id = %s
-          AND DATE(scanned_at) = CURDATE()
-        ORDER BY scanned_at DESC
-        LIMIT 1
-    """, (student_id,))
-    row = cursor.fetchone()
-    if not row:
-        return "in"
-    return "out" if row["scan_type"] == "in" else "in"
+@app.before_request
+def _ensure_registry():
+    boot_once()
 
 
-# ─────────────────────────────────────────────────────────────
-#  RECORD EVERY SCAN AS A NEW ROW
-#  Unlimited scan-ins and scan-outs per student per day
-# ─────────────────────────────────────────────────────────────
-def record_scan(cursor, db, student_id, scan_type,
-                latitude, longitude, location):
-    now    = datetime.now()
-    status = (
-        "late"
-        if scan_type == "in" and now.time() > LATE_THRESHOLD
-        else "present"
-    )
-    cursor.execute("""
-        INSERT INTO scans
-          (student_id, scan_type, status, scanned_at, latitude, longitude, location)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
-    """, (
-        student_id,
-        scan_type,
-        status,
-        now,
-        str(latitude),
-        str(longitude),
-        location
-    ))
-    db.commit()
+@app.get("/")
+def student_page():
+    return _page("index.html")
 
 
-# ─────────────────────────────────────────────────────────────
-#  API — GET TODAY'S SCANS (admin dashboard)
-# ─────────────────────────────────────────────────────────────
-@app.route("/api/scans/today", methods=["GET"])
-def get_today_scans():
-    try:
-        db     = get_db()
-        cursor = db.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT
-                s.name, s.index_number, s.program, s.level,
-                sc.scan_type, sc.status, sc.location,
-                TIME_FORMAT(sc.scanned_at, '%H:%i:%s') AS scan_time,
-                DATE(sc.scanned_at) AS scan_date,
-                sc.id AS scan_id
-            FROM scans sc
-            JOIN students s ON sc.student_id = s.id
-            WHERE DATE(sc.scanned_at) = CURDATE()
-            ORDER BY sc.scanned_at ASC
-        """)
-        rows = cursor.fetchall()
-        for row in rows:
-            if row.get("scan_date"):
-                row["scan_date"] = str(row["scan_date"])
-        cursor.close()
-        db.close()
-        return jsonify(rows)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+@app.get("/admin")
+def admin_page():
+    return _page("admin.html")
 
 
-# ─────────────────────────────────────────────────────────────
-#  API — GET SCANS BY DATE
-# ─────────────────────────────────────────────────────────────
-@app.route("/api/scans/<date_str>", methods=["GET"])
-def get_scans_by_date(date_str):
-    try:
-        db     = get_db()
-        cursor = db.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT
-                s.name, s.index_number, s.program, s.level,
-                sc.scan_type, sc.status, sc.location,
-                TIME_FORMAT(sc.scanned_at, '%H:%i:%s') AS scan_time,
-                DATE(sc.scanned_at) AS scan_date,
-                sc.id AS scan_id
-            FROM scans sc
-            JOIN students s ON sc.student_id = s.id
-            WHERE DATE(sc.scanned_at) = %s
-            ORDER BY sc.scanned_at ASC
-        """, (date_str,))
-        rows = cursor.fetchall()
-        for row in rows:
-            if row.get("scan_date"):
-                row["scan_date"] = str(row["scan_date"])
-        cursor.close()
-        db.close()
-        return jsonify(rows)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+@app.get("/assets/<path:filename>")
+def assets(filename):
+    if filename not in ASSET_FILES:
+        abort(HttpStatus.NOT_FOUND)
+    return send_from_directory(FRONTEND_DIR, filename)
 
 
-# ─────────────────────────────────────────────────────────────
-#  API — GET A STUDENT'S FULL SCAN HISTORY
-# ─────────────────────────────────────────────────────────────
-@app.route("/api/student/<index_number>/scans", methods=["GET"])
-def get_student_scans(index_number):
-    try:
-        db     = get_db()
-        cursor = db.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT
-                s.name, s.index_number, s.program, s.level,
-                sc.scan_type, sc.status, sc.location,
-                TIME_FORMAT(sc.scanned_at, '%H:%i:%s') AS scan_time,
-                DATE(sc.scanned_at) AS scan_date
-            FROM scans sc
-            JOIN students s ON sc.student_id = s.id
-            WHERE s.index_number = %s
-            ORDER BY sc.scanned_at DESC
-        """, (index_number,))
-        rows = cursor.fetchall()
-        for row in rows:
-            if row.get("scan_date"):
-                row["scan_date"] = str(row["scan_date"])
-        cursor.close()
-        db.close()
-        return jsonify(rows)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+@app.get("/api/campus")
+def campus():
+    return jsonify(check_location(None, None, None))
 
 
-# ─────────────────────────────────────────────────────────────
-#  API — GET ALL STUDENTS
-# ─────────────────────────────────────────────────────────────
-@app.route("/api/students", methods=["GET"])
-def get_students():
-    try:
-        db     = get_db()
-        cursor = db.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM students ORDER BY name")
-        rows = cursor.fetchall()
-        for row in rows:
-            if row.get("created_at"):
-                row["created_at"] = str(row["created_at"])
-        cursor.close()
-        db.close()
-        return jsonify(rows)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-# ─────────────────────────────────────────────────────────────
-#  API — ADD STUDENT
-# ─────────────────────────────────────────────────────────────
-@app.route("/api/students", methods=["POST"])
-def add_student():
-    d = request.get_json()
-    try:
-        db     = get_db()
-        cursor = db.cursor()
-        cursor.execute("""
-            INSERT INTO students (name, index_number, program, level)
-            VALUES (%s, %s, %s, %s)
-        """, (d["name"], d["index_number"], d["program"], d["level"]))
-        db.commit()
-        new_id = cursor.lastrowid
-        cursor.close()
-        db.close()
-        return jsonify({"success": True, "id": new_id})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-# ─────────────────────────────────────────────────────────────
-#  API — DELETE STUDENT
-# ─────────────────────────────────────────────────────────────
-@app.route("/api/students/<int:student_id>", methods=["DELETE"])
-def delete_student(student_id):
-    try:
-        db     = get_db()
-        cursor = db.cursor()
-        cursor.execute(
-            "DELETE FROM scans WHERE student_id = %s", (student_id,)
+@app.post("/api/location/check")
+def location_check():
+    payload = request.get_json(silent=True) or {}
+    return jsonify(
+        check_location(
+            payload.get("latitude"),
+            payload.get("longitude"),
+            payload.get("accuracy_metres"),
         )
-        cursor.execute(
-            "DELETE FROM students WHERE id = %s", (student_id,)
-        )
-        db.commit()
-        cursor.close()
-        db.close()
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    )
 
 
-# ─────────────────────────────────────────────────────────────
-#  API — DELETE A SINGLE SCAN ENTRY
-# ─────────────────────────────────────────────────────────────
-@app.route("/api/scans/<int:scan_id>", methods=["DELETE"])
-def delete_scan(scan_id):
+@app.post("/api/recognize")
+def recognize_face():
+    payload = request.get_json(silent=True) or {}
     try:
-        db     = get_db()
-        cursor = db.cursor()
-        cursor.execute("DELETE FROM scans WHERE id = %s", (scan_id,))
-        db.commit()
-        cursor.close()
-        db.close()
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        image = _scan_bytes(payload)
+        with connect() as connection:
+            result = recognize(
+                connection,
+                image,
+                payload.get("latitude"),
+                payload.get("longitude"),
+                payload.get("accuracy_metres"),
+            )
+    except RegistryError as error:
+        return fail(str(error))
+    return jsonify(result)
+
+
+@app.post("/api/admin/login")
+def login():
+    payload = request.get_json(silent=True) or {}
+    username = (payload.get("username") or EMPTY_TEXT).strip()
+    password = payload.get("password") or EMPTY_TEXT
+    if username == ADMIN_USERNAME and password == admin_password():
+        session[SESSION_KEY] = ADMIN_USERNAME
+        session.permanent = True
+        return jsonify({"signed_in": True})
+    return fail(
+        "Those details do not match the registry office login.",
+        HttpStatus.UNAUTHORIZED,
+    )
+
+
+@app.post("/api/admin/logout")
+def logout():
+    session.pop(SESSION_KEY, None)
+    return jsonify({"signed_in": False})
+
+
+@app.get("/api/admin/session")
+def admin_session():
+    return jsonify({"signed_in": signed_in()})
+
+
+@app.get("/api/students")
+def students():
+    denied = require_admin()
+    if denied is not None:
+        return denied
+    with connect() as connection:
+        return jsonify(student_cards(connection))
+
+
+@app.post("/api/students")
+def create_student():
+    denied = require_admin()
+    if denied is not None:
+        return denied
+    try:
+        image = _upload_bytes(required=True)
+        with connect() as connection:
+            add_student(connection, request.form, image)
+    except RegistryError as error:
+        return fail(str(error))
+    return jsonify({"saved": True})
+
+
+@app.post("/api/students/<int:student_id>")
+def update_student(student_id):
+    denied = require_admin()
+    if denied is not None:
+        return denied
+    try:
+        image = _upload_bytes(required=False)
+        with connect() as connection:
+            edit_student(connection, student_id, request.form, image)
+    except RegistryError as error:
+        return fail(str(error))
+    return jsonify({"saved": True})
+
+
+@app.delete("/api/students/<int:student_id>")
+def destroy_student(student_id):
+    denied = require_admin()
+    if denied is not None:
+        return denied
+    try:
+        with connect() as connection:
+            remove_student(connection, student_id)
+    except RegistryError as error:
+        return fail(str(error))
+    return jsonify({"saved": True})
+
+
+@app.get("/api/attendance/today")
+def today():
+    denied = require_admin()
+    if denied is not None:
+        return denied
+    with connect() as connection:
+        return jsonify(attendance_today(connection))
 
 
 if __name__ == "__main__":
-    app_port = int(os.environ.get("PORT", str(DEFAULT_APP_PORT)))
-    print("\n" + "="*55)
-    print("  🚀  FaceAttend backend running")
-    print(f"  📡  http://localhost:{app_port}")
-    print("="*55 + "\n")
-    app.run(debug=True, host="0.0.0.0", port=app_port)
+    boot_once()
+    port = int(os.environ.get("PORT", str(DEFAULT_APP_PORT)))
+    print(f"Palm attendance ready on port {port}")
+    app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)

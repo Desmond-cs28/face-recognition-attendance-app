@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Registry · Palm University College</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,640&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/assets/admin.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"></span>
+      <div>
+        <p class="kicker">Palm University College</p>
+        <h1>Registry</h1>
+      </div>
+    </div>
+    <a class="quiet" href="/">Attendance screen</a>
+  </header>
+  <main class="wrap">
+    <section class="login_wrap" id="login_wrap">
+      <form class="card login_card" id="login_form">
+        <p class="eyebrow">Registry office</p>
+        <h2>Sign in</h2>
+        <p class="note">Students stay on the attendance screen. This page links each face to a name, index number, programme, and year of study.</p>
+        <label class="field">Username
+          <input name="username" autocomplete="username" required>
+        </label>
+        <label class="field">Password
+          <input name="password" type="password" autocomplete="current-password" required>
+        </label>
+        <p class="form_error" id="login_error"></p>
+        <button class="primary" type="submit">Sign in</button>
+        <p class="note">Username admin · Password palm2024</p>
+      </form>
+    </section>
+    <section class="registry" id="registry" hidden>
+      <div class="panel_head">
+        <div>
+          <p class="eyebrow">Student faces</p>
+          <h2>Match details to a photograph</h2>
+        </div>
+        <button type="button" class="ghost" id="sign_out">Sign out</button>
+      </div>
+      <form class="card enrol" id="student_form">
+        <label class="field wide">Photograph
+          <input name="photo" type="file" accept="image/*">
+        </label>
+        <label class="field">Name
+          <input name="name" required maxlength="80">
+        </label>
+        <label class="field">Index number
+          <input name="index_number" required maxlength="32">
+        </label>
+        <label class="field">Programme
+          <input name="program" list="programmes" required maxlength="80" placeholder="BSc Computer Science">
+        </label>
+        <label class="field">Year of study
+          <select name="year_of_study" required>
+            <option value="">Choose a year</option>
+            <option value="1">Year 1</option>
+            <option value="2">Year 2</option>
+            <option value="3">Year 3</option>
+            <option value="4">Year 4</option>
+          </select>
+        </label>
+        <datalist id="programmes">
+          <option value="BSc Computer Science"></option>
+          <option value="BSc Business Information Technology"></option>
+          <option value="BSc Business Administration"></option>
+        </datalist>
+        <div class="actions wide">
+          <button class="primary" type="submit" id="save_button">Save student</button>
+          <button class="ghost" type="button" id="cancel_edit" hidden>Cancel edit</button>
+        </div>
+        <p class="form_error wide" id="form_error"></p>
+      </form>
+      <div class="roster" id="roster"></div>
+      <article class="card">
+        <p class="eyebrow">Today</p>
+        <h2>Attendance on campus</h2>
+        <div id="attendance"></div>
+      </article>
+    </section>
+  </main>
+  <script src="/assets/admin.js"></script>
+</body>
+</html>
