@@ -29,9 +29,12 @@
     <div class="layout">
       <section class="stage_card">
         <div class="stage">
-          <video id="video" autoplay muted playsinline></video>
+          <video id="video" autoplay muted playsinline webkit-playsinline></video>
           <div class="guide" aria-hidden="true"></div>
-          <p class="stage_note" id="stage_note">Starting the camera…</p>
+          <div class="stage_panel" id="stage_panel">
+            <p id="stage_note">Press start, then allow the camera, so your face appears in the oval.</p>
+            <button type="button" class="primary" id="camera_button">Start camera</button>
+          </div>
         </div>
         <p class="hint">Hold your face inside the oval, in daylight or a bright room.</p>
       </section>

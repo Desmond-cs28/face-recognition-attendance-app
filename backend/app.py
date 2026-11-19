@@ -144,7 +144,9 @@ def admin_page():
 def assets(filename):
     if filename not in ASSET_FILES:
         abort(HttpStatus.NOT_FOUND)
-    return send_from_directory(FRONTEND_DIR, filename)
+    response = send_from_directory(FRONTEND_DIR, filename)
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @app.get("/api/campus")

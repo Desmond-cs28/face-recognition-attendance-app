@@ -25,9 +25,23 @@ const JpegQuality = 0.85;
 const EmptyWidth = 0;
 const ClockZone = "Africa/Accra";
 const LocationOptions = { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 };
+const CameraErrorName = {
+  NotAllowed: "NotAllowedError",
+  NotFound: "NotFoundError",
+  NotReadable: "NotReadableError",
+  Security: "SecurityError",
+  Overconstrained: "OverconstrainedError",
+};
+const SecurePage = true;
+const CameraAttempts = [
+  { video: { facingMode: { ideal: "user" }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false },
+  { video: true, audio: false },
+];
 
 const video = document.querySelector("#video");
+const stage_panel = document.querySelector("#stage_panel");
 const stage_note = document.querySelector("#stage_note");
+const camera_button = document.querySelector("#camera_button");
 const campus_card = document.querySelector("#campus_card");
 const campus_title = document.querySelector("#campus_title");
 const campus_message = document.querySelector("#campus_message");
@@ -49,6 +63,7 @@ const step_record = document.querySelector("#step_record");
 let latest_fix = null;
 let latest_verdict = LocationVerdict.Missing;
 let camera_ready = false;
+let camera_task = null;
 let scan_busy = false;
 
 function show_value(value) {
@@ -136,26 +151,85 @@ async function send_fix(position) {
   paint_campus(location);
 }
 
-async function start_camera() {
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    stage_note.hidden = false;
-    stage_note.textContent = "This device has no camera stream. Open the page on a phone to scan.";
+function show_camera_message(message) {
+  stage_panel.hidden = false;
+  stage_note.textContent = message;
+}
+
+function camera_message(error) {
+  const name = error && error.name;
+  if (name === CameraErrorName.NotAllowed) {
+    return "Allow the camera for this site, then press Start camera again.";
+  }
+  if (name === CameraErrorName.NotFound) {
+    return "No camera was found. Open this page on the phone that has the camera.";
+  }
+  if (name === CameraErrorName.NotReadable) {
+    return "The camera is busy in another app. Close that app, then press Start camera.";
+  }
+  if (name === CameraErrorName.Security) {
+    return "Open http://localhost:4721/ in Chrome or Safari so the camera can start.";
+  }
+  if (name === CameraErrorName.Overconstrained) {
+    return "This camera needs a simpler request. Press Start camera again.";
+  }
+  return "Press Start camera and allow the prompt so your face can appear.";
+}
+
+async function open_stream() {
+  let last_error = null;
+  for (const constraints of CameraAttempts) {
+    try {
+      return await navigator.mediaDevices.getUserMedia(constraints);
+    } catch (error) {
+      last_error = error;
+      const name = error && error.name;
+      if (name === CameraErrorName.NotAllowed || name === CameraErrorName.Security) throw error;
+    }
+  }
+  throw last_error;
+}
+
+function attach_stream(stream) {
+  video.muted = true;
+  video.playsInline = true;
+  video.setAttribute("playsinline", "");
+  video.srcObject = stream;
+  const played = video.play();
+  if (played && typeof played.catch === "function") played.catch(() => {});
+  camera_ready = true;
+  stage_panel.hidden = true;
+  scan_button.disabled = !!scan_busy;
+  paint_steps(latest_verdict, false);
+}
+
+async function open_camera() {
+  if (camera_ready) return;
+  if (window.isSecureContext !== SecurePage) {
+    show_camera_message("Open http://localhost:4721/ in Chrome or Safari so the camera can start.");
     return;
   }
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user" },
-      audio: false,
-    });
-    video.srcObject = stream;
-    await video.play();
-    camera_ready = true;
-    stage_note.hidden = true;
-    scan_button.disabled = scan_busy ? true : false;
-  } catch (error) {
-    stage_note.hidden = false;
-    stage_note.textContent = "Allow the camera to scan a face. Attendance uses the live picture only.";
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    show_camera_message("Use Chrome or Safari. This browser cannot open the camera.");
+    return;
   }
+  camera_button.disabled = true;
+  camera_button.textContent = "Starting camera…";
+  try {
+    attach_stream(await open_stream());
+  } catch (error) {
+    camera_button.disabled = false;
+    camera_button.textContent = "Start camera";
+    show_camera_message(camera_message(error));
+  }
+}
+
+function start_camera() {
+  if (camera_ready || camera_task) return camera_task;
+  camera_task = open_camera().finally(() => {
+    camera_task = null;
+  });
+  return camera_task;
 }
 
 function frame_payload() {
@@ -217,8 +291,7 @@ function paint_result(result) {
 
 async function take_attendance() {
   if (!camera_ready || video.videoWidth === EmptyWidth) {
-    stage_note.hidden = false;
-    stage_note.textContent = "The camera is still starting.";
+    show_camera_message("Press Start camera and wait until your face is inside the oval.");
     return;
   }
   scan_busy = true;
@@ -250,6 +323,7 @@ async function take_attendance() {
 
 check_button.addEventListener("click", request_location);
 scan_button.addEventListener("click", take_attendance);
+camera_button.addEventListener("click", start_camera);
 request_location();
 start_camera();
 setInterval(() => {
